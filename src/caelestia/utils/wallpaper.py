@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import random
@@ -35,7 +36,34 @@ def check_wall(wall: Path, filter_size: tuple[int, int], threshold: float) -> bo
         return width >= filter_size[0] * threshold and height >= filter_size[1] * threshold
 
 
+def _read_current_link() -> Path | None:
+    if wallpaper_link_path.exists() or wallpaper_link_path.is_symlink():
+        with contextlib.suppress(OSError):
+            target = wallpaper_link_path.resolve(strict=False)
+            if target.is_file():
+                return target
+    return None
+
+
+def _atomic_relink(dst_link: Path, target: Path) -> None:
+    dst_link.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst_link.with_name(dst_link.name + ".tmp")
+    try:
+        if tmp.exists() or tmp.is_symlink():
+            tmp.unlink()
+        os.symlink(str(target), str(tmp))
+        os.replace(tmp, dst_link)
+    finally:
+        if tmp.exists() or tmp.is_symlink():
+            with contextlib.suppress(OSError):
+                tmp.unlink()
+
+
 def get_wallpaper() -> str | None:
+    current = _read_current_link()
+    if current:
+        return str(current)
+
     try:
         return wallpaper_path_path.read_text()
     except IOError:
@@ -148,8 +176,7 @@ def convert_gif(wall: Path) -> Path:
 
 
 def set_wallpaper(wall: Path, no_smart: bool) -> None:
-    # Make path absolute
-    wall = Path(wall).resolve()
+    wall = Path(wall).expanduser().resolve()
 
     if not is_valid_image(wall):
         raise ValueError(f'"{wall}" is not a valid image')
@@ -160,17 +187,13 @@ def set_wallpaper(wall: Path, no_smart: bool) -> None:
     # Update files
     wallpaper_path_path.parent.mkdir(parents=True, exist_ok=True)
     wallpaper_path_path.write_text(str(wall))
-    wallpaper_link_path.parent.mkdir(parents=True, exist_ok=True)
-    wallpaper_link_path.unlink(missing_ok=True)
-    wallpaper_link_path.symlink_to(wall)
+    _atomic_relink(wallpaper_link_path, wall)
 
     cache = wallpapers_cache_dir / compute_hash(wall_cache)
 
     # Generate thumbnail or get from cache
     thumb = get_thumb(wall_cache, cache)
-    wallpaper_thumbnail_path.parent.mkdir(parents=True, exist_ok=True)
-    wallpaper_thumbnail_path.unlink(missing_ok=True)
-    wallpaper_thumbnail_path.symlink_to(thumb)
+    _atomic_relink(wallpaper_thumbnail_path, thumb)
 
     scheme = get_scheme()
 
