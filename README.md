@@ -210,6 +210,8 @@ All configuration options are in `~/.config/caelestia/cli.json`.
         "enableChromium": true,
         "enableZed": true,
         "enableCava": true,
+        "enableKitty": true,
+        "enableSwayNC": true,
         "iconTheme": "Papirus-Dark",
         "iconThemeLight": "Papirus-Light",
         "iconThemeDark": "Papirus-Dark",
