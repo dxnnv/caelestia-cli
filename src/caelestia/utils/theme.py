@@ -324,8 +324,8 @@ def apply_gtk(colours: dict[str, str], mode: str, icon_theme: str | None = None)
 
 @log_exception
 def apply_qt(colours: dict[str, str], mode: str, icon_theme: str | None = None) -> None:
-    colours = gen_replace(colours, templates_dir / f"qt{mode}.colors", hash=True)
-    atomic_write(config_dir / "qtengine/caelestia.colors", colours)
+    colour_scheme = gen_replace(colours, templates_dir / f"qt{mode}.colors", hash=True)
+    atomic_write(config_dir / "qtengine/caelestia.colors", colour_scheme)
 
     config = (templates_dir / "qtengine.json").read_text()
     config = config.replace("{{ $mode }}", mode.capitalize())
@@ -399,7 +399,7 @@ def apply_cava(colours: dict[str, str]) -> None:
 def apply_kitty(colours: dict[str, str]) -> None:
     theme_text = gen_replace(colours, templates_dir / "kitty.conf", hash=True)
     theme_path = config_dir / "kitty/themes/caelestia.conf"
-    write_file(theme_path, theme_text)
+    atomic_write(theme_path, theme_text)
 
     if shutil.which("kitty") is None:
         return
@@ -452,11 +452,11 @@ def apply_swaync(colours: dict[str, str]) -> None:
     for alias, target in alias_map.items():
         lines.append(f"@define-color {alias} @{target};\n")
 
-    write_file(config_dir / "swaync/colors.css", "".join(lines))
+    atomic_write(theme_dir / "swaync/colors.css", "".join(lines))
 
     with contextlib.suppress(FileNotFoundError):
         css = gen_replace(colours, templates_dir / "swaync.css", hash=True)
-        write_file(config_dir / "swaync/style.css", css)
+        atomic_write(theme_dir / "swaync/style.css", css)
 
     if shutil.which("swaync-client") is None:
         return
