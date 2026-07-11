@@ -7,30 +7,37 @@ from typing import Any, Callable, cast
 
 from caelestia.utils import hypr
 from caelestia.utils.paths import get_config
-
+from caelestia.utils.regex import regex_matches
 
 def is_subset(superset, subset):
     for key, value in subset.items():
         if key not in superset:
             return False
 
+        super_val = superset[key]
+
         if isinstance(value, dict):
-            if not is_subset(superset[key], value):
+            if not is_subset(super_val, value):
                 return False
 
         elif isinstance(value, str):
-            if value not in superset[key]:
+            if not isinstance(super_val, str):
+                return False
+
+            if value in super_val:
+                continue
+        
+            if not regex_matches(value, super_val):
                 return False
 
         elif isinstance(value, list):
-            if not set(value) <= set(superset[key]):
+            if not set(value) <= set(super_val):
                 return False
         elif isinstance(value, set):
-            if not value <= superset[key]:
+            if not value <= super_val:
                 return False
-
         else:
-            if not value == superset[key]:
+            if not value == super_val:
                 return False
 
     return True
