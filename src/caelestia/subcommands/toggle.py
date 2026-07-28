@@ -1,13 +1,14 @@
-import json
 import shlex
 import shutil
 from argparse import Namespace
 from collections import ChainMap
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from caelestia.utils import hypr
 from caelestia.utils.paths import get_config
 from caelestia.utils.regex import regex_matches
+
 
 def is_subset(superset, subset):
     for key, value in subset.items():
@@ -26,7 +27,7 @@ def is_subset(superset, subset):
 
             if value in super_val:
                 continue
-        
+
             if not regex_matches(value, super_val):
                 return False
 
@@ -37,7 +38,7 @@ def is_subset(superset, subset):
             if not value <= super_val:
                 return False
         else:
-            if not value == super_val:
+            if value != super_val:
                 return False
 
     return True
@@ -122,7 +123,7 @@ class Command:
         spawned = False
         if self.args.workspace in self.cfg:
             for client in self.cfg[self.args.workspace].values():
-                if "enable" in client and client["enable"] and self.handle_client_config(client):
+                if client.get("enable") and self.handle_client_config(client):
                     spawned = True
 
         if not spawned:
@@ -156,9 +157,9 @@ class Command:
             return False
 
         spawned = False
-        if "command" in client and client["command"]:
+        if client.get("command"):
             spawned = self.spawn_client(selector, client["command"])
-        if "move" in client and client["move"]:
+        if client.get("move"):
             self.move_client(selector, self.args.workspace)
 
         return spawned
