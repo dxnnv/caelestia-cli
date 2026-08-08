@@ -419,53 +419,6 @@ def apply_kitty(colours: dict[str, str]) -> None:
 
 
 @log_exception
-def apply_swaync(colours: dict[str, str]) -> None:
-    def define(name: str, value: str) -> str:
-        return f"@define-color {name} #{value};\n"
-
-    lines: list[str] = []
-    for key, hexval in colours.items():
-        kebab = re.sub(r"(?<!^)([A-Z])", r"-\1", key).replace("_", "-").lower()
-        underscored = kebab.replace("-", "_")
-        lines.append(define(kebab, hexval))
-        if underscored != kebab:
-            lines.append(define(underscored, hexval))
-
-    alias_map = {
-        "blur_background": "surface-dim",
-        "groupbackground": "surface-dim",
-        "buttoncolor": "primary",
-        "bordercolor": "inverse-primary",
-        "fontcolor": "on-surface",
-        "source_color": "primary",
-        "background": "surface",
-        "on_background": "on-surface",
-        "on_secondary": "on-secondary",
-        "primary_fixed_dim": "primary-fixed-dim",
-        "primary_fixed": "primary-fixed",
-        "on_primary": "on-primary",
-        "inverse_primary": "inverse-primary",
-        "on_surface_variant": "on-surface-variant",
-        "scrim": "scrim",
-    }
-
-    for alias, target in alias_map.items():
-        lines.append(f"@define-color {alias} @{target};\n")
-
-    atomic_write(theme_dir / "swaync/colors.css", "".join(lines))
-
-    with contextlib.suppress(FileNotFoundError):
-        css = gen_replace(colours, templates_dir / "swaync.css", hash=True)
-        atomic_write(theme_dir / "swaync/style.css", css)
-
-    if shutil.which("swaync-client") is None:
-        return
-
-    subprocess.run(["swaync-client", "--reload-config"], check=False)
-    subprocess.run(["swaync-client", "--reload-css"], check=False)
-
-
-@log_exception
 def apply_user_templates(colours: dict[str, str], mode: str) -> None:
     if not user_templates_dir.is_dir():
         return
@@ -526,8 +479,6 @@ def apply_colours(colours: dict[str, str], mode: str) -> None:
                 apply_cava(colours)
             if check("enableKitty"):
                 apply_kitty(colours)
-            if check("enableSwayNC"):
-                apply_swaync(colours)
             apply_user_templates(colours, mode)
 
             if post_hook := cfg.get("postHook"):
