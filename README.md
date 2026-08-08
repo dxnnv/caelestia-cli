@@ -214,7 +214,6 @@ All configuration options are in `~/.config/caelestia/cli.json`.
         "enableZed": true,
         "enableCava": true,
         "enableKitty": true,
-        "enableSwayNC": true,
         "iconTheme": "Papirus-Dark",
         "iconThemeLight": "Papirus-Light",
         "iconThemeDark": "Papirus-Dark",
