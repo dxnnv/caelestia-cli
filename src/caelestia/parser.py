@@ -75,6 +75,14 @@ def parse_args() -> tuple[argparse.ArgumentParser, argparse.Namespace]:
     set_parser.add_argument("-m", "--mode", choices=["dark", "light"], help="the mode to switch to")
     set_parser.add_argument("-v", "--variant", choices=scheme_variants, help="the variant to switch to")
 
+    preview_parser = scheme_command_parser.add_parser("preview", help="print a specified scheme's colours")
+    preview_parser.set_defaults(cls=scheme.Preview)
+    preview_parser.add_argument("--notify", action="store_true", help="send a notification on error")
+    preview_parser.add_argument("-n", "--name", choices=get_scheme_names(), help="the name of the scheme to preview")
+    preview_parser.add_argument("-f", "--flavour", help="the flavour to preview")
+    preview_parser.add_argument("-m", "--mode", choices=["dark", "light"], help="the mode to preview")
+    preview_parser.add_argument("-v", "--variant", choices=scheme_variants, help="the variant to preview")
+
     # Create parser for screenshot opts
     screenshot_parser = command_parser.add_parser("screenshot", help="take a screenshot")
     screenshot_parser.set_defaults(cls=screenshot.Command)
