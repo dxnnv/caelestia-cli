@@ -52,8 +52,7 @@ class Scheme:
         self._name = name
         self._check_flavour()
         self._check_mode()
-        self._update_colours()
-        self.save()
+        self.update_colours()
 
     @property
     def flavour(self) -> str:
@@ -122,16 +121,7 @@ class Scheme:
 
     def save(self) -> None:
         scheme_path.parent.mkdir(parents=True, exist_ok=True)
-        atomic_dump(
-            scheme_path,
-            {
-                "name": self.name,
-                "flavour": self.flavour,
-                "mode": self.mode,
-                "variant": self.variant,
-                "colours": self.colours,
-            },
-        )
+        atomic_dump(scheme_path, self.to_dict())
 
     def set_random(self) -> None:
         self._name = random.choice(get_scheme_names())
@@ -140,8 +130,39 @@ class Scheme:
         self.update_colours()
 
     def update_colours(self) -> None:
-        self._update_colours()
+        self.refresh_colours()
         self.save()
+
+    def refresh_colours(self) -> None:
+        if self.name != "dynamic":
+            self._colours = read_colours_from_file(self.get_colours_path())
+            return
+
+        from caelestia.utils.material import get_colours_for_image
+
+        try:
+            self._colours = get_colours_for_image(scheme=self)
+        except FileNotFoundError:
+            error_msg = (
+                "No wallpaper set. Please set a wallpaper via `caelestia wallpaper` before setting a dynamic scheme."
+            )
+            if self.notify:
+                notify(
+                    "-u",
+                    "critical",
+                    "Unable to set dynamic scheme",
+                    error_msg,
+                )
+            raise ValueError(error_msg)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "flavour": self.flavour,
+            "mode": self.mode,
+            "variant": self.variant,
+            "colours": self.colours.copy(),
+        }
 
     def _check_flavour(self) -> None:
         flavours = get_scheme_flavours(self.name)
@@ -152,26 +173,6 @@ class Scheme:
         modes = get_scheme_modes(self.name, self.flavour)
         if self._mode not in modes:
             self._mode = modes[0]
-
-    def _update_colours(self) -> None:
-        if self.name == "dynamic":
-            from caelestia.utils.material import get_colours_for_image
-
-            try:
-                self._colours = get_colours_for_image()
-            except FileNotFoundError:
-                if self.notify:
-                    notify(
-                        "-u",
-                        "critical",
-                        "Unable to set dynamic scheme",
-                        "No wallpaper set. Please set a wallpaper via `caelestia wallpaper` before setting a dynamic scheme.",
-                    )
-                raise ValueError(
-                    "No wallpaper set. Please set a wallpaper via `caelestia wallpaper` before setting a dynamic scheme."
-                )
-        else:
-            self._colours = read_colours_from_file(self.get_colours_path())
 
     def __str__(self) -> str:
         return (
